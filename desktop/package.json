@@ -1,0 +1,17 @@
+{
+  "name": "restaurant-rms-desktop",
+  "version": "1.0.0",
+  "description": "Naxçıvan RMS - Windows Desktop Restoran İdarəetmə Proqramı",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win"
+  },
+  "keywords": ["pos", "restaurant", "windows", "desktop", "electron"],
+  "author": "Antigravity RMS Team",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^33.2.0"
+  }
+}

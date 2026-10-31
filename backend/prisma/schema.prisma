@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  passwordHash String
+  fullName     String
+  role         String    // SUPER_ADMIN, RESTAURANT_ADMIN, CASHIER, WAITER, KITCHEN_STAFF, STOCK_MANAGER
+  phone        String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  ordersServed Order[]   @relation("WaiterOrders")
+  ordersClosed Order[]   @relation("CashierOrders")
+  payments     Payment[]
+  auditLogs    AuditLog[]
+}
+
+model Table {
+  id          String       @id @default(cuid())
+  tableNumber String       @unique
+  capacity    Int          @default(4)
+  status      String       @default("EMPTY") // EMPTY, ORDER_PENDING, ORDER_PREPARING, SERVICE_PENDING, BILL_PENDING, PAID
+  token       String       @unique // Secure cryptographically generated token
+  section     String       @default("Əsas Zal") // Əsas Zal, Teras, VIP Otaq
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  orders      Order[]
+  waiterCalls WaiterCall[]
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String     @unique
+  icon         String?
+  displayOrder Int        @default(0)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  items        MenuItem[]
+}
+
+model MenuItem {
+  id                       String       @id @default(cuid())
+  categoryId               String
+  category                 Category     @relation(fields: [categoryId], references: [id])
+  name                     String
+  description              String?
+  price                    Float
+  imageUrl                 String?
+  isAvailable              Boolean      @default(true)
+  isTemporarilyUnavailable Boolean      @default(false)
+  displayOrder             Int          @default(0)
+  preparationTimeMinutes   Int          @default(15)
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
+
+  orderItems               OrderItem[]
+  recipeItems              RecipeItem[]
+}
+
+model Ingredient {
+  id                   String             @id @default(cuid())
+  name                 String             @unique
+  unit                 String             // KG, G, L, ML, PIECE
+  currentStock         Float              @default(0)
+  minStockThreshold    Float              @default(5)
+  purchasePricePerUnit Float              @default(0)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  recipeItems          RecipeItem[]
+  transactions         StockTransaction[]
+}
+
+model RecipeItem {
+  id             String     @id @default(cuid())
+  menuItemId     String
+  menuItem       MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  ingredientId   String
+  ingredient     Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  quantityNeeded Float      // Quantity needed per 1 unit of menuItem in the ingredient's unit
+
+  @@unique([menuItemId, ingredientId])
+}
+
+model StockTransaction {
+  id            String     @id @default(cuid())
+  ingredientId  String
+  ingredient    Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  type          String     // INCOMING, OUTGOING_USAGE, MANUAL_CORRECTION, RETURN_REVERSAL
+  quantity      Float
+  previousStock Float
+  newStock      Float
+  unitCost      Float      @default(0)
+  totalCost     Float      @default(0)
+  supplier      String?
+  invoiceNumber String?
+  note          String?
+  createdAt     DateTime   @default(now())
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  orderNumber    String      @unique
+  tableId        String
+  table          Table       @relation(fields: [tableId], references: [id])
+  status         String      @default("PENDING") // PENDING, CONFIRMED, PREPARING, READY, SERVED, COMPLETED, CANCELLED
+  subtotal       Float       @default(0)
+  discountAmount Float       @default(0)
+  discountReason String?
+  serviceFee     Float       @default(0)
+  totalAmount    Float       @default(0)
+  source         String      @default("QR_CODE") // QR_CODE, POS_CASHIER, WAITER_APP
+  notes          String?
+  waiterId       String?
+  waiter         User?       @relation("WaiterOrders", fields: [waiterId], references: [id])
+  cashierId      String?
+  cashier        User?       @relation("CashierOrders", fields: [cashierId], references: [id])
+  stockDeducted  Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  items          OrderItem[]
+  payments       Payment[]
+}
+
+model OrderItem {
+  id                  String   @id @default(cuid())
+  orderId             String
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId          String
+  menuItem            MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity            Int      @default(1)
+  unitPrice           Float
+  totalPrice          Float
+  specialInstructions String?
+  status              String   @default("PENDING") // PENDING, PREPARING, READY, SERVED, CANCELLED
+}
+
+model Payment {
+  id                String   @id @default(cuid())
+  orderId           String
+  order             Order    @relation(fields: [orderId], references: [id])
+  amount            Float
+  method            String   // CASH, CARD_TERMINAL, SPLIT
+  cashGiven         Float?
+  changeGiven       Float?
+  terminalReference String?
+  terminalStatus    String?  // SUCCESS, FAILED, SIMULATED
+  processedById     String?
+  processedBy       User?    @relation(fields: [processedById], references: [id])
+  createdAt         DateTime @default(now())
+}
+
+model WaiterCall {
+  id           String    @id @default(cuid())
+  tableId      String
+  table        Table     @relation(fields: [tableId], references: [id])
+  callType     String    @default("ASSISTANCE") // ASSISTANCE, BILL_REQUEST, CLEANUP
+  status       String    @default("PENDING") // PENDING, ACKNOWLEDGED, RESOLVED
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+  resolvedById String?
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+model RestaurantSetting {
+  id                   String   @id @default("default-settings")
+  name                 String   @default("Naxçıvan Restoranı & Lounge")
+  address              String   @default("Bakı şəhəri, Nizami küç. 42")
+  phone                String   @default("+994 (12) 498-00-00")
+  tin                  String   @default("1402394821")
+  currency             String   @default("AZN")
+  vatPercentage        Float    @default(0)
+  serviceFeePercentage Float    @default(5)
+  terminalType         String   @default("SIMULATED_POS") // SIMULATED_POS, PASHA_BANK, ABB, MANUAL_EXTERNAL
+  terminalConfig       String?
+  updatedAt            DateTime @updatedAt
+}

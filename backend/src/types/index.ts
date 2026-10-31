@@ -1,0 +1,47 @@
+export enum UserRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  RESTAURANT_ADMIN = 'RESTAURANT_ADMIN',
+  CASHIER = 'CASHIER',
+  WAITER = 'WAITER',
+  KITCHEN_STAFF = 'KITCHEN_STAFF',
+  STOCK_MANAGER = 'STOCK_MANAGER'
+}
+
+export enum TableStatus {
+  EMPTY = 'EMPTY',
+  ORDER_PENDING = 'ORDER_PENDING',
+  ORDER_PREPARING = 'ORDER_PREPARING',
+  SERVICE_PENDING = 'SERVICE_PENDING',
+  BILL_PENDING = 'BILL_PENDING',
+  PAID = 'PAID'
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  PREPARING = 'PREPARING',
+  READY = 'READY',
+  SERVED = 'SERVED',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum PaymentMethod {
+  CASH = 'CASH',
+  CARD_TERMINAL = 'CARD_TERMINAL',
+  SPLIT = 'SPLIT'
+}
+
+export enum StockTransactionType {
+  INCOMING = 'INCOMING',
+  OUTGOING_USAGE = 'OUTGOING_USAGE',
+  MANUAL_CORRECTION = 'MANUAL_CORRECTION',
+  RETURN_REVERSAL = 'RETURN_REVERSAL'
+}
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  fullName: string;
+  role: UserRole;
+}

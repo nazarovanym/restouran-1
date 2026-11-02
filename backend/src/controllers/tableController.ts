@@ -29,8 +29,11 @@ export class TableController {
         orderBy: { tableNumber: 'asc' }
       });
 
-      // Hər masa üçün QR kod DataURL əlavə edirik
-      const baseUrl = config.frontendUrl;
+      // Dinamik olaraq cari hostu təyin edirik (Lokal şəbəkə IP və ya internet ünvanı)
+      const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:5000';
+      const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+      const baseUrl = `${protocol}://${host}`;
+
       const tablesWithQR = await Promise.all(
         tables.map(async (t) => ({
           ...t,

@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-export const API_BASE_URL = 'http://localhost:5000/api/v1';
+// Əgər brauzerdə işləyirsə cari hostu (lokal şəbəkə IP və ya internet ünvanı), əks halda localhost:5000
+export const getBaseOrigin = (): string => {
+  if (typeof window !== 'undefined' && window.location.origin) {
+    // Əgər frontend 5173 portunda dev rejimdədirsə, backend 5000-ə yönləndir
+    if (window.location.port === '5173') {
+      return `${window.location.protocol}//${window.location.hostname}:5000`;
+    }
+    return window.location.origin;
+  }
+  return 'http://localhost:5000';
+};
+
+export const API_BASE_URL = `${getBaseOrigin()}/api/v1`;
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,6 +23,7 @@ export const api = axios.create({
 
 // Request interceptor: add auth token
 api.interceptors.request.use((config) => {
+  config.baseURL = `${getBaseOrigin()}/api/v1`;
   const token = localStorage.getItem('rms_token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { soundService } from '../services/soundService';
+import { getBaseOrigin } from '../api';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -26,7 +27,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeCalls, setActiveCalls] = useState<any[]>([]);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5000', {
+    const serverUrl = getBaseOrigin();
+    const newSocket = io(serverUrl, {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 10,
       reconnectionDelay: 1000

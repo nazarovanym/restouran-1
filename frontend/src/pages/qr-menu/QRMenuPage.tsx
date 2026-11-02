@@ -16,7 +16,7 @@ import {
   Flame,
   X
 } from 'lucide-react';
-import { api } from '../../api';
+import { api, getBaseOrigin } from '../../api';
 import { io } from 'socket.io-client';
 
 export const QRMenuPage: React.FC = () => {
@@ -76,7 +76,7 @@ export const QRMenuPage: React.FC = () => {
   // WebSocket ilə bu masaya aid sifariş statusunu canlı izləmək
   useEffect(() => {
     if (!token) return;
-    const socket = io('http://localhost:5000');
+    const socket = io(getBaseOrigin());
     socket.emit('join_room', `table:${token}`);
 
     socket.on('table:order_update', (order: any) => {
